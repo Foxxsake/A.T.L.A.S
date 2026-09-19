@@ -1,8 +1,13 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math' as math;
 
 void main() {
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
   runApp(const AtlasApp());
 }
 
@@ -14,674 +19,233 @@ class AtlasApp extends StatelessWidget {
     return MaterialApp(
       title: 'A.T.L.A.S.',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
+      theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF05070A),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFFC837),
-          surface: Color(0xFF0B0F17),
-          background: Color(0xFF05070A),
-        ),
-        textTheme: GoogleFonts.rajdhaniTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
-      home: const AtlasDashboardScreen(),
+      home: const AtlasDashboard(),
     );
   }
 }
 
-class AtlasDashboardScreen extends StatefulWidget {
-  const AtlasDashboardScreen({super.key});
+class AtlasDashboard extends StatefulWidget {
+  const AtlasDashboard({super.key});
 
   @override
-  State<AtlasDashboardScreen> createState() => _AtlasDashboardScreenState();
+  State<AtlasDashboard> createState() => _AtlasDashboardState();
 }
 
-class _AtlasDashboardScreenState extends State<AtlasDashboardScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _orbRotationController;
-  late AnimationController _pulseController;
-  late AnimationController _spinnerController;
-
-  int _selectedLeftIndex = 0;
-  int _selectedStatusIndex = 0;
-  int _bottomNavIndex = 0;
-
-  final TextEditingController _promptController = TextEditingController();
-
-  final List<Map<String, dynamic>> _leftTools = [
-    {'name': 'Chat', 'icon': Icons.chat_bubble_rounded},
-    {'name': 'Terminal', 'icon': Icons.terminal_rounded},
-    {'name': 'Files', 'icon': Icons.folder_rounded},
-    {'name': 'Tools', 'icon': Icons.build_rounded},
-    {'name': 'Sessions', 'icon': Icons.access_time_rounded},
-    {'name': 'Settings', 'icon': Icons.settings_rounded},
-  ];
-
-  final List<Map<String, dynamic>> _statusItems = [
-    {'name': 'IDLE', 'icon': Icons.adjust_rounded},
-    {'name': 'LISTENING', 'icon': Icons.graphic_eq_rounded},
-    {'name': 'THINKING', 'icon': Icons.psychology_rounded},
-    {'name': 'EXECUTING', 'icon': Icons.play_arrow_outlined},
-    {'name': 'SPEAKING', 'icon': Icons.volume_up_outlined},
-    {'name': 'APPROVAL', 'icon': Icons.verified_user_outlined},
-    {'name': 'ERROR', 'icon': Icons.cancel_outlined},
-    {'name': 'OFFLINE', 'icon': Icons.cloud_off_outlined},
-  ];
-
-  final List<Map<String, dynamic>> _recentActivities = [
-    {
-      'type': 'Terminal',
-      'detail': 'npm run dev',
-      'time': '2m ago',
-      'icon': Icons.terminal_rounded,
-      'isSuccess': true,
-      'isLoading': false,
-    },
-    {
-      'type': 'File Operation',
-      'detail': 'Created: src/components/QuantumCore.tsx',
-      'time': '5m ago',
-      'icon': Icons.folder_rounded,
-      'isSuccess': true,
-      'isLoading': false,
-    },
-    {
-      'type': 'Thinking',
-      'detail': 'Planning next steps...',
-      'time': '7m ago',
-      'icon': Icons.psychology_rounded,
-      'isSuccess': false,
-      'isLoading': true,
-    },
-  ];
+class _AtlasDashboardState extends State<AtlasDashboard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _orbRotationController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 24),
-    )..repeat();
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-
-    _spinnerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(seconds: 18),
     )..repeat();
   }
 
   @override
   void dispose() {
-    _orbRotationController.dispose();
-    _pulseController.dispose();
-    _spinnerController.dispose();
-    _promptController.dispose();
+    _controller.dispose();
     super.dispose();
-  }
-
-  void _submitPrompt([String? text]) {
-    final query = text ?? _promptController.text.trim();
-    if (query.isEmpty) return;
-
-    setState(() {
-      _recentActivities.insert(0, {
-        'type': 'Command',
-        'detail': query,
-        'time': 'Just now',
-        'icon': Icons.flash_on_rounded,
-        'isSuccess': true,
-        'isLoading': false,
-      });
-      _promptController.clear();
-      _selectedStatusIndex = 3; // EXECUTING
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    const goldPrimary = Color(0xFFFFD043);
-    const goldAccent = Color(0xFFF3BA2F);
-    const darkCard = Color(0xFF0A0E17);
-    const goldBorder = Color(0x55E5A93C);
-
     return Scaffold(
       backgroundColor: const Color(0xFF05070A),
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
+            _buildHeader(),
+            const SizedBox(height: 10),
+            _buildInfoCards(),
+            const SizedBox(height: 6),
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Bar
-                    _buildTopHeader(goldPrimary),
-                    const SizedBox(height: 14),
-
-                    // 3 Metric Cards: MODEL, PROVIDER, SESSION
-                    _buildMetricsRow(darkCard, goldBorder, goldAccent),
-                    const SizedBox(height: 16),
-
-                    // Main Interactive Section: Left Tools, Center Orb, Right Status
-                    _buildCoreDashboard(goldPrimary, goldAccent),
-                    const SizedBox(height: 16),
-
-                    // Search / Prompt Bar
-                    _buildSearchBar(goldPrimary, goldBorder),
-                    const SizedBox(height: 12),
-
-                    // 4 Quick Action Buttons
-                    _buildActionChips(darkCard, goldBorder, goldPrimary),
-                    const SizedBox(height: 16),
-
-                    // Recent Activity Panel
-                    _buildRecentActivitySection(darkCard, goldBorder, goldAccent),
-                    const SizedBox(height: 20),
-                  ],
-                ),
+              child: Row(
+                children: [
+                  _buildLeftNav(),
+                  Expanded(child: _buildCenter()),
+                  _buildStatusList(),
+                ],
               ),
             ),
-
-            // Bottom Navigation Bar
-            _buildBottomNavigationBar(goldPrimary),
+            _buildInputArea(),
+            const SizedBox(height: 8),
+            _buildRecentActivity(),
+            const SizedBox(height: 6),
+            _buildBottomNav(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopHeader(Color goldPrimary) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Stylized "A" Logo
-        CustomPaint(
-          size: const Size(38, 42),
-          painter: AtlasLogoPainter(),
-        ),
-        const SizedBox(width: 10),
-
-        // Title and Subtitle
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  // ==================== HEADER ====================
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+      child: Row(
+        children: [
+          Row(
             children: [
               Text(
-                'A.T.L.A.S.',
-                style: GoogleFonts.orbitron(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3.0,
-                  color: goldPrimary,
-                  shadows: [
-                    Shadow(
-                      color: goldPrimary.withOpacity(0.55),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                'ADVANCED TACTICAL LOGIC & ASSISTANCE SYSTEM',
-                style: GoogleFonts.rajdhani(
-                  fontSize: 8.5,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.1,
-                  color: const Color(0xFFC7A868),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-
-        // Connected Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: const Color(0xFF071B12),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFF00FF7F).withOpacity(0.35),
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF00FF7F),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFF00FF7F),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
-                  ],
+                'A',
+                style: GoogleFonts.inter(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFFFB800),
                 ),
               ),
               const SizedBox(width: 6),
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.rajdhani(fontSize: 11, fontWeight: FontWeight.bold),
-                  children: const [
-                    TextSpan(
-                      text: 'CONNECTED',
-                      style: TextStyle(color: Color(0xFF00FF7F), letterSpacing: 0.8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'A.T.L.A.S.',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFFFB800),
+                      letterSpacing: 1,
                     ),
-                    TextSpan(
-                      text: ' • ',
-                      style: TextStyle(color: Color(0xFF00FF7F)),
+                  ),
+                  Text(
+                    'ADVANCED TACTICAL LOGIC & ASSISTANCE SYSTEM',
+                    style: GoogleFonts.inter(
+                      fontSize: 7,
+                      color: Colors.white54,
+                      letterSpacing: 0.5,
                     ),
-                    TextSpan(
-                      text: 'Hermes Online',
-                      style: TextStyle(color: Color(0xFF7CE4AA)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 8),
-
-        // Settings Icon
-        IconButton(
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          padding: EdgeInsets.zero,
-          icon: Icon(
-            Icons.settings_outlined,
-            color: goldPrimary.withOpacity(0.85),
-            size: 22,
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A1A0A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF00E676).withOpacity(0.45)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00E676),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'CONNECTED • Hermes Online',
+                  style: GoogleFonts.inter(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF00E676),
+                  ),
+                ),
+              ],
+            ),
           ),
-          onPressed: () {},
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricsRow(Color darkCard, Color goldBorder, Color goldAccent) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricCard(
-            title: 'MODEL',
-            subtitle: 'Claude 3.5 Sonnet\n(OpenRouter)',
-            icon: Icons.memory_rounded,
-            darkCard: darkCard,
-            goldBorder: goldBorder,
-            goldAccent: goldAccent,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'PROVIDER',
-            subtitle: 'OpenRouter Online',
-            icon: Icons.cloud_outlined,
-            darkCard: darkCard,
-            goldBorder: goldBorder,
-            goldAccent: goldAccent,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildMetricCard(
-            title: 'SESSION',
-            subtitle: 'Active 2h 14m',
-            icon: Icons.access_time_rounded,
-            darkCard: darkCard,
-            goldBorder: goldBorder,
-            goldAccent: goldAccent,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color darkCard,
-    required Color goldBorder,
-    required Color goldAccent,
-  }) {
-    return Container(
-      height: 74,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: darkCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: goldBorder, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE5A93C).withOpacity(0.08),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.settings, size: 19, color: Color(0xFFFFB800)),
         ],
       ),
+    );
+  }
+
+  // ==================== INFO CARDS ====================
+  Widget _buildInfoCards() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: goldAccent, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
+          _infoCard(Icons.memory, 'MODEL', 'Claude 3.5 Sonnet', '(OpenRouter)'),
+          const SizedBox(width: 7),
+          _infoCard(Icons.cloud_outlined, 'PROVIDER', 'OpenRouter Online', null),
+          const SizedBox(width: 7),
+          _infoCard(Icons.timer_outlined, 'SESSION', 'Active 2h 14m', null),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(IconData icon, String title, String value, String? sub) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E14),
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.45)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 15, color: const Color(0xFFFFB800)),
+            const SizedBox(height: 3),
+            Text(title, style: const TextStyle(fontSize: 8.5, color: Colors.white54)),
+            Text(
+              value,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+            if (sub != null)
+              Text(sub, style: const TextStyle(fontSize: 8.5, color: Color(0xFFFFB800))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==================== LEFT NAV ====================
+  Widget _buildLeftNav() {
+    final items = [
+      (Icons.chat_bubble, 'Chat', true),
+      (Icons.terminal, 'Terminal', false),
+      (Icons.folder_outlined, 'Files', false),
+      (Icons.build_outlined, 'Tools', false),
+      (Icons.layers_outlined, 'Sessions', false),
+      (Icons.settings_outlined, 'Settings', false),
+    ];
+
+    return SizedBox(
+      width: 68,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: items.map((item) {
+          final active = item.$3;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 7),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.rajdhani(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.1,
-                    color: const Color(0xFFD4AF37),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: active ? const Color(0xFFFFB800).withOpacity(0.15) : Colors.transparent,
+                    border: active ? Border.all(color: const Color(0xFFFFB800), width: 1.4) : null,
                   ),
+                  child: Icon(item.$1, size: 18, color: active ? const Color(0xFFFFB800) : Colors.white38),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
-                  style: GoogleFonts.rajdhani(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: 1.15,
-                    color: Colors.white.withOpacity(0.95),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoreDashboard(Color goldPrimary, Color goldAccent) {
-    return SizedBox(
-      height: 380,
-      child: Stack(
-        children: [
-          // Center Animated Orb & Readiness Headline
-          Positioned.fill(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedBuilder(
-                  animation: Listenable.merge([_orbRotationController, _pulseController]),
-                  builder: (context, child) {
-                    return SizedBox(
-                      width: 250,
-                      height: 250,
-                      child: CustomPaint(
-                        painter: AtlasOrbPainter(
-                          rotationAngle: _orbRotationController.value * 2 * math.pi,
-                          pulseValue: _pulseController.value,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'READY WHEN YOU ARE',
-                  style: GoogleFonts.orbitron(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2.2,
-                    color: goldPrimary,
-                    shadows: [
-                      Shadow(
-                        color: goldPrimary.withOpacity(0.4),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Speak • Type • Command • Create',
-                  style: GoogleFonts.rajdhani(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 1.0,
-                    color: const Color(0xFF8B9BB4),
+                  item.$2,
+                  style: TextStyle(
+                    fontSize: 8.5,
+                    color: active ? const Color(0xFFFFB800) : Colors.white38,
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Left Tool Column
-          Positioned(
-            left: 0,
-            top: 10,
-            bottom: 30,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(_leftTools.length, (index) {
-                final tool = _leftTools[index];
-                final isSelected = _selectedLeftIndex == index;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedLeftIndex = index;
-                    });
-                  },
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected
-                              ? const Color(0xFF1E1705)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? goldPrimary
-                                : const Color(0xFF423B2A),
-                            width: isSelected ? 1.8 : 1.0,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: goldPrimary.withOpacity(0.35),
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : [],
-                        ),
-                        child: Icon(
-                          tool['icon'] as IconData,
-                          size: 20,
-                          color: isSelected ? goldPrimary : const Color(0xFF9E8B63),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        tool['name'] as String,
-                        style: GoogleFonts.rajdhani(
-                          fontSize: 10,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? goldPrimary : const Color(0xFF857E70),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-          ),
-
-          // Right Status Column
-          Positioned(
-            right: 0,
-            top: 12,
-            bottom: 40,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: List.generate(_statusItems.length, (index) {
-                final item = _statusItems[index];
-                final isSelected = _selectedStatusIndex == index;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedStatusIndex = index;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.5),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          item['icon'] as IconData,
-                          size: 16,
-                          color: isSelected ? goldPrimary : const Color(0xFF7A8393),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          item['name'] as String,
-                          style: GoogleFonts.rajdhani(
-                            fontSize: 11,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                            letterSpacing: 1.0,
-                            color: isSelected ? goldPrimary : const Color(0xFF7A8393),
-                            shadows: isSelected
-                                ? [
-                                    Shadow(
-                                      color: goldPrimary.withOpacity(0.5),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(Color goldPrimary, Color goldBorder) {
-    return Container(
-      height: 52,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF090D15),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: goldBorder, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE5A93C).withOpacity(0.12),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.mic_none_rounded, color: goldPrimary, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: _promptController,
-              onSubmitted: _submitPrompt,
-              style: GoogleFonts.rajdhani(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Ask me anything...',
-                hintStyle: GoogleFonts.rajdhani(
-                  color: const Color(0xFF867D6F),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                border: InputBorder.none,
-                isDense: true,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: _submitPrompt,
-            icon: Icon(Icons.send_rounded, color: goldPrimary, size: 22),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionChips(Color darkCard, Color goldBorder, Color goldPrimary) {
-    final actions = [
-      {'label': 'Build something', 'icon': Icons.view_in_ar_rounded},
-      {'label': 'Search the web', 'icon': Icons.search_rounded},
-      {'label': 'Run a command', 'icon': Icons.terminal_rounded},
-      {'label': 'More', 'icon': Icons.grid_view_rounded},
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: actions.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: InkWell(
-              onTap: () => _submitPrompt(item['label'] as String),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: darkCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: goldBorder.withOpacity(0.4), width: 1.0),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(item['icon'] as IconData, color: goldPrimary, size: 15),
-                    const SizedBox(width: 6),
-                    Text(
-                      item['label'] as String,
-                      style: GoogleFonts.rajdhani(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFE2D6BE),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           );
         }).toList(),
@@ -689,418 +253,289 @@ class _AtlasDashboardScreenState extends State<AtlasDashboardScreen>
     );
   }
 
-  Widget _buildRecentActivitySection(Color darkCard, Color goldBorder, Color goldAccent) {
-    return Container(
-      decoration: BoxDecoration(
-        color: darkCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: goldBorder, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFE5A93C).withOpacity(0.08),
-            blurRadius: 10,
+  // ==================== CENTER ORB ====================
+  Widget _buildCenter() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (_, __) {
+            return Transform.rotate(
+              angle: _controller.value * 2 * math.pi,
+              child: Container(
+                width: 195,
+                height: 195,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFB800).withOpacity(0.35),
+                      blurRadius: 35,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: CustomPaint(painter: OrbPainter()),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'READY WHEN YOU ARE',
+          style: GoogleFonts.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFFFB800),
+            letterSpacing: 1,
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(14),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Speak · Type · Command · Create',
+          style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white54),
+        ),
+      ],
+    );
+  }
+
+  // ==================== STATUS LIST ====================
+  Widget _buildStatusList() {
+    final list = [
+      (Icons.radio_button_checked, 'IDLE', true),
+      (Icons.mic, 'LISTENING', false),
+      (Icons.psychology, 'THINKING', false),
+      (Icons.play_arrow, 'EXECUTING', false),
+      (Icons.volume_up, 'SPEAKING', false),
+      (Icons.verified_user, 'APPROVAL', false),
+      (Icons.error_outline, 'ERROR', false),
+      (Icons.cloud_off, 'OFFLINE', false),
+    ];
+
+    return SizedBox(
+      width: 92,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: list.map((s) {
+          final active = s.$3;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.5),
+            child: Row(
+              children: [
+                Icon(s.$1, size: 14, color: active ? const Color(0xFFFFB800) : Colors.white38),
+                const SizedBox(width: 5),
+                Text(
+                  s.$2,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    color: active ? const Color(0xFFFFB800) : Colors.white38,
+                    fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // ==================== INPUT ====================
+  Widget _buildInputArea() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Column(
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0E14),
+              borderRadius: BorderRadius.circular(26),
+              border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.mic, color: Color(0xFFFFB800), size: 20),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Ask me anything...',
+                    style: TextStyle(color: Colors.white38, fontSize: 14),
+                  ),
+                ),
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFB800),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_forward, color: Colors.black, size: 17),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
-              Text(
-                'RECENT ACTIVITY',
-                style: GoogleFonts.rajdhani(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: const Color(0xFFD4AF37),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: const Color(0x33D4AF37),
-                ),
-              ),
+              _chip(Icons.view_in_ar, 'Build something'),
+              const SizedBox(width: 5),
+              _chip(Icons.search, 'Search the web'),
+              const SizedBox(width: 5),
+              _chip(Icons.terminal, 'Run a command'),
+              const SizedBox(width: 5),
+              _chip(Icons.more_horiz, 'More'),
             ],
           ),
-          const SizedBox(height: 12),
-          ..._recentActivities.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isLast = index == _recentActivities.length - 1;
-
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF141923),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFF333D4F),
-                            width: 1.0,
-                          ),
-                        ),
-                        child: Icon(
-                          item['icon'] as IconData,
-                          size: 16,
-                          color: goldAccent,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['type'] as String,
-                              style: GoogleFonts.rajdhani(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              item['detail'] as String,
-                              style: GoogleFonts.rajdhani(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xFF8E9BAF),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        item['time'] as String,
-                        style: GoogleFonts.rajdhani(
-                          fontSize: 11,
-                          color: const Color(0xFF7A8393),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (item['isLoading'] == true)
-                        RotationTransition(
-                          turns: _spinnerController,
-                          child: const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.0,
-                              color: Color(0xFF2979FF),
-                            ),
-                          ),
-                        )
-                      else if (item['isSuccess'] == true)
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: Color(0xFF00E676),
-                        ),
-                    ],
-                  ),
-                ),
-                if (!isLast)
-                  const Divider(
-                    color: Color(0x1AFFFFFF),
-                    height: 1,
-                  ),
-              ],
-            );
-          }),
         ],
       ),
     );
   }
 
-  Widget _buildBottomNavigationBar(Color goldPrimary) {
-    final navItems = [
-      {'label': 'Home', 'icon': Icons.home_rounded},
-      {'label': 'Chat', 'icon': Icons.chat_bubble_outline_rounded},
-      {'label': 'History', 'icon': Icons.history_rounded},
-      {'label': 'Profile', 'icon': Icons.person_outline_rounded},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF05070A),
-        border: Border(
-          top: BorderSide(color: Color(0x22D4AF37), width: 1.0),
+  Widget _chip(IconData icon, String label) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E14),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFFFB800).withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: const Color(0xFFFFB800)),
+            const SizedBox(width: 3),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 9.5, color: Colors.white70),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  // ==================== RECENT ACTIVITY ====================
+  Widget _buildRecentActivity() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0E14),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white10),
+      ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(navItems.length, (index) {
-              final item = navItems[index];
-              final isSelected = _bottomNavIndex == index;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _bottomNavIndex = index;
-                  });
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      item['icon'] as IconData,
-                      size: 24,
-                      color: isSelected ? goldPrimary : const Color(0xFF6E788A),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item['label'] as String,
-                      style: GoogleFonts.rajdhani(
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? goldPrimary : const Color(0xFF6E788A),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    if (isSelected)
-                      Container(
-                        width: 14,
-                        height: 2,
-                        decoration: BoxDecoration(
-                          color: goldPrimary,
-                          borderRadius: BorderRadius.circular(1),
-                        ),
-                      )
-                    else
-                      const SizedBox(height: 2),
-                  ],
-                ),
-              );
-            }),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('RECENT ACTIVITY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+              Text('View All', style: TextStyle(fontSize: 10, color: const Color(0xFFFFB800))),
+            ],
           ),
-          const SizedBox(height: 6),
-          // iOS / Android Home Indicator line
-          Container(
-            width: 110,
-            height: 3.5,
-            decoration: BoxDecoration(
-              color: const Color(0x55FFFFFF),
-              borderRadius: BorderRadius.circular(2),
+          const SizedBox(height: 8),
+          _activity(Icons.terminal, 'Terminal', 'npm run dev', '2m ago', true),
+          _activity(Icons.insert_drive_file_outlined, 'File Operation', 'Created: src/components/QuantumCore.tsx', '5m ago', true),
+          _activity(Icons.psychology, 'Thinking', 'Planning next steps...', '7m ago', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _activity(IconData icon, String title, String desc, String time, bool done) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFFFFB800)),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500)),
+                Text(desc, style: const TextStyle(fontSize: 9.5, color: Colors.white54)),
+              ],
             ),
+          ),
+          Text(time, style: const TextStyle(fontSize: 9.5, color: Colors.white38)),
+          const SizedBox(width: 5),
+          Icon(
+            done ? Icons.check_circle : Icons.sync,
+            size: 15,
+            color: done ? const Color(0xFF00E676) : const Color(0xFF00B0FF),
           ),
         ],
       ),
+    );
+  }
+
+  // ==================== BOTTOM NAV ====================
+  Widget _buildBottomNav() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A0E14),
+        border: Border(top: BorderSide(color: Colors.white10)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _tab(Icons.home, 'Home', true),
+          _tab(Icons.chat_bubble_outline, 'Chat', false),
+          _tab(Icons.history, 'History', false),
+          _tab(Icons.person_outline, 'Profile', false),
+        ],
+      ),
+    );
+  }
+
+  Widget _tab(IconData icon, String label, bool active) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 21, color: active ? const Color(0xFFFFB800) : Colors.white38),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9.5,
+            color: active ? const Color(0xFFFFB800) : Colors.white38,
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Custom Painter for the Stylized Sci-Fi "A" Chevron Logo
-class AtlasLogoPainter extends CustomPainter {
+// ==================== ORB PAINTER ====================
+class OrbPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFFFD043)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeJoin = StrokeJoin.miter;
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()..style = PaintingStyle.stroke;
 
-    final fillPaint = Paint()
-      ..color = const Color(0x33FFD043)
-      ..style = PaintingStyle.fill;
+    for (int i = 1; i <= 9; i++) {
+      final radius = (size.width / 2) * (i / 9.5);
+      paint
+        ..color = const Color(0xFFFFB800).withOpacity(1.1 - (i * 0.1))
+        ..strokeWidth = i == 1 ? 2.2 : 1.3;
+      canvas.drawCircle(center, radius, paint);
+    }
 
-    final path = Path();
-    // Outer "A" chevron
-    path.moveTo(size.width * 0.5, size.height * 0.05);
-    path.lineTo(size.width * 0.92, size.height * 0.95);
-    path.lineTo(size.width * 0.72, size.height * 0.95);
-    path.lineTo(size.width * 0.5, size.height * 0.45);
-    path.lineTo(size.width * 0.28, size.height * 0.95);
-    path.lineTo(size.width * 0.08, size.height * 0.95);
-    path.close();
-
-    canvas.drawPath(path, fillPaint);
-    canvas.drawPath(path, paint);
-
-    // Inner cross / core chevron
-    final innerPath = Path();
-    innerPath.moveTo(size.width * 0.5, size.height * 0.55);
-    innerPath.lineTo(size.width * 0.65, size.height * 0.85);
-    innerPath.lineTo(size.width * 0.35, size.height * 0.85);
-    innerPath.close();
-
-    final innerPaint = Paint()
-      ..color = const Color(0xFFFFEA7A)
-      ..style = PaintingStyle.fill;
-    canvas.drawPath(innerPath, innerPaint);
+    // Core glow
+    final core = Paint()
+      ..color = const Color(0xFFFFB800)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    canvas.drawCircle(center, 11, core);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Custom Painter for the Rotating Glowing Golden Sci-Fi Orb
-class AtlasOrbPainter extends CustomPainter {
-  final double rotationAngle;
-  final double pulseValue;
-
-  AtlasOrbPainter({
-    required this.rotationAngle,
-    required this.pulseValue,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = size.width / 2;
-
-    // Deep ambient golden aura behind everything
-    final ambientPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0x44FFC107),
-          const Color(0x1AFFB300),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: maxRadius * 1.1));
-    canvas.drawCircle(center, maxRadius * 1.1, ambientPaint);
-
-    // Save canvas for rotating elements
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotationAngle);
-
-    // Ring 1: Outer glowing segmented orbit with ticks
-    final outerRingPaint = Paint()
-      ..color = const Color(0x77FFD54F)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawCircle(Offset.zero, maxRadius * 0.95, outerRingPaint);
-
-    // Draw orbital tick marks along outer ring
-    final tickPaint = Paint()
-      ..color = const Color(0x99FFE082)
-      ..strokeWidth = 1.2;
-    const tickCount = 48;
-    for (int i = 0; i < tickCount; i++) {
-      final angle = (i * 2 * math.pi) / tickCount;
-      final tickLen = (i % 4 == 0) ? 6.0 : 2.5;
-      final p1 = Offset(math.cos(angle) * (maxRadius * 0.95), math.sin(angle) * (maxRadius * 0.95));
-      final p2 = Offset(math.cos(angle) * (maxRadius * 0.95 - tickLen), math.sin(angle) * (maxRadius * 0.95 - tickLen));
-      canvas.drawLine(p1, p2, tickPaint);
-    }
-
-    // Ring 2: Dotted particle orbit ring
-    final particlePaint = Paint()
-      ..color = const Color(0xCCFFD54F)
-      ..style = PaintingStyle.fill;
-    const particleCount = 72;
-    for (int i = 0; i < particleCount; i++) {
-      final angle = (i * 2 * math.pi) / particleCount;
-      final dotRadius = (i % 6 == 0) ? 1.8 : 0.9;
-      final pos = Offset(
-        math.cos(angle) * (maxRadius * 0.82),
-        math.sin(angle) * (maxRadius * 0.82),
-      );
-      canvas.drawCircle(pos, dotRadius, particlePaint);
-    }
-
-    // Ring 3: Mid dense tech ring with dash arcs
-    final midRingPaint = Paint()
-      ..color = const Color(0xAAFFCA28)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    for (int i = 0; i < 4; i++) {
-      final startAngle = (i * math.pi / 2) + 0.15;
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: maxRadius * 0.68),
-        startAngle,
-        math.pi / 2 - 0.3,
-        false,
-        midRingPaint,
-      );
-    }
-
-    // Concentric dotted inner ring
-    const innerDotCount = 40;
-    for (int i = 0; i < innerDotCount; i++) {
-      final angle = (i * 2 * math.pi) / innerDotCount;
-      final pos = Offset(
-        math.cos(angle) * (maxRadius * 0.54),
-        math.sin(angle) * (maxRadius * 0.54),
-      );
-      canvas.drawCircle(pos, 1.2, particlePaint);
-    }
-
-    // Radial radiant spikes / energy beams
-    final rayPaint = Paint()
-      ..color = const Color(0x33FFE082)
-      ..strokeWidth = 0.9;
-    const rayCount = 16;
-    for (int i = 0; i < rayCount; i++) {
-      final angle = (i * 2 * math.pi) / rayCount;
-      final p1 = Offset(math.cos(angle) * (maxRadius * 0.35), math.sin(angle) * (maxRadius * 0.35));
-      final p2 = Offset(math.cos(angle) * (maxRadius * 0.88), math.sin(angle) * (maxRadius * 0.88));
-      canvas.drawLine(p1, p2, rayPaint);
-    }
-
-    canvas.restore();
-
-    // Ring 4: Reverse rotating fine particle orbit for celestial parallax effect
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(-rotationAngle * 0.7);
-
-    final reverseDotPaint = Paint()
-      ..color = const Color(0x88FFE082)
-      ..style = PaintingStyle.fill;
-    const reverseDotCount = 36;
-    for (int i = 0; i < reverseDotCount; i++) {
-      final angle = (i * 2 * math.pi) / reverseDotCount;
-      final pos = Offset(
-        math.cos(angle) * (maxRadius * 0.42),
-        math.sin(angle) * (maxRadius * 0.42),
-      );
-      canvas.drawCircle(pos, 0.9, reverseDotPaint);
-    }
-    canvas.restore();
-
-    // Central Core: Golden solar flare glowing orb with pulsating intensity
-    final coreRadius = maxRadius * (0.22 + 0.03 * pulseValue);
-    final coreGlowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0xFFFFFFFF),
-          const Color(0xFFFFEA7A),
-          const Color(0xFFFFB300),
-          const Color(0xFFE65100).withOpacity(0.4),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.25, 0.6, 0.85, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: coreRadius * 2.2));
-
-    canvas.drawCircle(center, coreRadius * 2.2, coreGlowPaint);
-
-    // Inner bright hot core
-    final hotCorePaint = Paint()
-      ..color = Colors.white
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-    canvas.drawCircle(center, coreRadius * 0.4, hotCorePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant AtlasOrbPainter oldDelegate) {
-    return oldDelegate.rotationAngle != rotationAngle ||
-        oldDelegate.pulseValue != pulseValue;
-  }
 }

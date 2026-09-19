@@ -1,5 +1,9 @@
-package com.example.atlasdashboard   // change to your package name
+package com.example
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -15,25 +19,41 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.cos
-import kotlin.math.sin
 
-// Colors
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            MaterialTheme(
+                colorScheme = darkColorScheme(
+                    background = Bg,
+                    surface = CardBg,
+                    primary = Gold
+                )
+            ) {
+                AtlasDashboard()
+            }
+        }
+    }
+}
+
+// ===================== COLORS =====================
 val Gold = Color(0xFFFFB800)
 val GoldDim = Color(0xFFFFB800).copy(alpha = 0.45f)
 val Bg = Color(0xFF05070A)
 val CardBg = Color(0xFF0A0E14)
 val Green = Color(0xFF00E676)
 
+// ===================== MAIN SCREEN =====================
 @Composable
 fun AtlasDashboard() {
     Column(
@@ -43,17 +63,11 @@ fun AtlasDashboard() {
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // Header
         HeaderSection()
-
         Spacer(modifier = Modifier.height(10.dp))
-
-        // Info Cards
         InfoCardsRow()
-
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Main content
         Row(
             modifier = Modifier
                 .weight(1f)
@@ -64,21 +78,15 @@ fun AtlasDashboard() {
             StatusList()
         }
 
-        // Input
         InputSection()
-
         Spacer(modifier = Modifier.height(8.dp))
-
-        // Recent Activity
         RecentActivitySection()
-
         Spacer(modifier = Modifier.height(6.dp))
-
-        // Bottom Nav
         BottomNavigationBar()
     }
 }
 
+// ===================== HEADER =====================
 @Composable
 fun HeaderSection() {
     Row(
@@ -87,7 +95,6 @@ fun HeaderSection() {
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo
         Text(
             text = "A",
             color = Gold,
@@ -113,7 +120,6 @@ fun HeaderSection() {
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Connected pill
         Row(
             modifier = Modifier
                 .background(Color(0xFF0A1A0A), RoundedCornerShape(20.dp))
@@ -136,10 +142,11 @@ fun HeaderSection() {
         }
 
         Spacer(modifier = Modifier.width(8.dp))
-        Icon(Icons.Default.Settings, contentDescription = null, tint = Gold, modifier = Modifier.size(19.dp))
+        Icon(Icons.Default.Settings, null, tint = Gold, modifier = Modifier.size(19.dp))
     }
 }
 
+// ===================== INFO CARDS =====================
 @Composable
 fun InfoCardsRow() {
     Row(
@@ -155,7 +162,12 @@ fun InfoCardsRow() {
 }
 
 @Composable
-fun RowScope.InfoCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, value: String, sub: String?) {
+fun RowScope.InfoCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    value: String,
+    sub: String?
+) {
     Column(
         modifier = Modifier
             .weight(1f)
@@ -164,7 +176,7 @@ fun RowScope.InfoCard(icon: androidx.compose.ui.graphics.vector.ImageVector, tit
             .padding(vertical = 9.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, contentDescription = null, tint = Gold, modifier = Modifier.size(15.dp))
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(15.dp))
         Spacer(modifier = Modifier.height(3.dp))
         Text(title, color = Color.White.copy(alpha = 0.55f), fontSize = 8.5.sp)
         Text(
@@ -182,6 +194,7 @@ fun RowScope.InfoCard(icon: androidx.compose.ui.graphics.vector.ImageVector, tit
     }
 }
 
+// ===================== LEFT NAV =====================
 @Composable
 fun LeftNavigation() {
     val items = listOf(
@@ -190,7 +203,7 @@ fun LeftNavigation() {
         Triple(Icons.Outlined.Folder, "Files", false),
         Triple(Icons.Outlined.Build, "Tools", false),
         Triple(Icons.Outlined.Layers, "Sessions", false),
-        Triple(Icons.Outlined.Settings, "Settings", false),
+        Triple(Icons.Outlined.Settings, "Settings", false)
     )
 
     Column(
@@ -219,8 +232,7 @@ fun LeftNavigation() {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        icon,
-                        contentDescription = label,
+                        icon, label,
                         tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
                         modifier = Modifier.size(18.dp)
                     )
@@ -236,6 +248,7 @@ fun LeftNavigation() {
     }
 }
 
+// ===================== CENTER ORB =====================
 @Composable
 fun CenterOrbSection(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "orb")
@@ -258,12 +271,11 @@ fun CenterOrbSection(modifier: Modifier = Modifier) {
             modifier = Modifier.size(195.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Glow
+            // Soft glow
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
-                    color = Gold.copy(alpha = 0.25f),
-                    radius = size.minDimension / 2,
-                    blendMode = androidx.compose.ui.graphics.BlendMode.Plus
+                    color = Gold.copy(alpha = 0.22f),
+                    radius = size.minDimension / 2.1f
                 )
             }
 
@@ -277,25 +289,19 @@ fun CenterOrbSection(modifier: Modifier = Modifier) {
                 for (i in 1..9) {
                     val radius = (size.minDimension / 2) * (i / 9.5f)
                     drawCircle(
-                        color = Gold.copy(alpha = 1.1f - i * 0.1f),
+                        color = Gold.copy(alpha = (1.05f - i * 0.095f).coerceIn(0.18f, 1f)),
                         radius = radius,
                         center = center,
-                        style = Stroke(width = if (i == 1) 2.2f else 1.3f)
+                        style = Stroke(width = if (i == 1) 2.4f else 1.35f)
                     )
                 }
-                // Core
-                drawCircle(
-                    color = Gold,
-                    radius = 11f,
-                    center = center
-                )
+                drawCircle(color = Gold, radius = 12f, center = center)
             }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
-
         Text(
-            text = "READY WHEN YOU ARE",
+            "READY WHEN YOU ARE",
             color = Gold,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.SemiBold,
@@ -303,13 +309,14 @@ fun CenterOrbSection(modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
-            text = "Speak · Type · Command · Create",
+            "Speak · Type · Command · Create",
             color = Color.White.copy(alpha = 0.55f),
             fontSize = 10.5.sp
         )
     }
 }
 
+// ===================== STATUS LIST =====================
 @Composable
 fun StatusList() {
     val statuses = listOf(
@@ -320,7 +327,7 @@ fun StatusList() {
         Triple(Icons.Default.VolumeUp, "SPEAKING", false),
         Triple(Icons.Default.VerifiedUser, "APPROVAL", false),
         Triple(Icons.Default.ErrorOutline, "ERROR", false),
-        Triple(Icons.Default.CloudOff, "OFFLINE", false),
+        Triple(Icons.Default.CloudOff, "OFFLINE", false)
     )
 
     Column(
@@ -335,8 +342,7 @@ fun StatusList() {
                 modifier = Modifier.padding(vertical = 4.5.dp)
             ) {
                 Icon(
-                    icon,
-                    contentDescription = null,
+                    icon, null,
                     tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
                     modifier = Modifier.size(14.dp)
                 )
@@ -352,6 +358,7 @@ fun StatusList() {
     }
 }
 
+// ===================== INPUT =====================
 @Composable
 fun InputSection() {
     Column(
@@ -359,7 +366,6 @@ fun InputSection() {
             .fillMaxWidth()
             .padding(horizontal = 14.dp)
     ) {
-        // Search bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -368,7 +374,7 @@ fun InputSection() {
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Mic, contentDescription = null, tint = Gold, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Mic, null, tint = Gold, modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 "Ask me anything...",
@@ -382,13 +388,12 @@ fun InputSection() {
                     .background(Gold, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(17.dp))
+                Icon(Icons.Default.ArrowForward, null, tint = Color.Black, modifier = Modifier.size(17.dp))
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Chips
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
@@ -412,7 +417,7 @@ fun RowScope.ActionChip(icon: androidx.compose.ui.graphics.vector.ImageVector, l
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Gold, modifier = Modifier.size(12.dp))
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(12.dp))
         Spacer(modifier = Modifier.width(3.dp))
         Text(
             label,
@@ -424,6 +429,7 @@ fun RowScope.ActionChip(icon: androidx.compose.ui.graphics.vector.ImageVector, l
     }
 }
 
+// ===================== RECENT ACTIVITY =====================
 @Composable
 fun RecentActivitySection() {
     Column(
@@ -451,14 +457,20 @@ fun RecentActivitySection() {
 }
 
 @Composable
-fun ActivityItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String, time: String, done: Boolean) {
+fun ActivityItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    desc: String,
+    time: String,
+    done: Boolean
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Gold, modifier = Modifier.size(16.dp))
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(9.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
@@ -468,13 +480,14 @@ fun ActivityItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: S
         Spacer(modifier = Modifier.width(5.dp))
         Icon(
             if (done) Icons.Default.CheckCircle else Icons.Default.Sync,
-            contentDescription = null,
+            null,
             tint = if (done) Green else Color(0xFF00B0FF),
             modifier = Modifier.size(15.dp)
         )
     }
 }
 
+// ===================== BOTTOM NAV =====================
 @Composable
 fun BottomNavigationBar() {
     Row(
@@ -495,8 +508,7 @@ fun BottomNavigationBar() {
 fun BottomNavItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, active: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
-            icon,
-            contentDescription = label,
+            icon, label,
             tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
             modifier = Modifier.size(21.dp)
         )

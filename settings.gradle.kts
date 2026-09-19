@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "ATLAS"
+rootProject.name = "A.T.L.A.S"
 
 include(":app")

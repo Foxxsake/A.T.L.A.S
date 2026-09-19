@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:theme="@style/Theme.ATLAS"
-        android:label="A.T.L.A.S."
+        android:label="@string/app_name"
         android:allowBackup="true"
         android:supportsRtl="true">
         <activity

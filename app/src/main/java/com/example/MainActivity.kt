@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -46,14 +47,14 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// ===================== COLORS =====================
+// Colors matching the HD mockup
 val Gold = Color(0xFFFFB800)
-val GoldDim = Color(0xFFFFB800).copy(alpha = 0.45f)
+val GoldBright = Color(0xFFFFD54F)
+val GoldDim = Color(0xFFFFB800).copy(alpha = 0.4f)
 val Bg = Color(0xFF05070A)
 val CardBg = Color(0xFF0A0E14)
 val Green = Color(0xFF00E676)
 
-// ===================== MAIN SCREEN =====================
 @Composable
 fun AtlasDashboard() {
     Column(
@@ -63,68 +64,82 @@ fun AtlasDashboard() {
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        HeaderSection()
-        Spacer(modifier = Modifier.height(10.dp))
-        InfoCardsRow()
-        Spacer(modifier = Modifier.height(6.dp))
-
+        // Header
+        Header()
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        // Info cards
+        InfoCards()
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Main area
         Row(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
         ) {
-            LeftNavigation()
-            CenterOrbSection(modifier = Modifier.weight(1f))
-            StatusList()
+            LeftNav()
+            CenterOrb(modifier = Modifier.weight(1f))
+            RightStatus()
         }
-
-        InputSection()
-        Spacer(modifier = Modifier.height(8.dp))
-        RecentActivitySection()
+        
+        // Input
+        InputBar()
+        
         Spacer(modifier = Modifier.height(6.dp))
-        BottomNavigationBar()
+        
+        // Recent activity
+        RecentActivity()
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Bottom nav
+        BottomNav()
     }
 }
 
-// ===================== HEADER =====================
 @Composable
-fun HeaderSection() {
+fun Header() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Logo
         Text(
             text = "A",
             color = Gold,
-            fontSize = 26.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Black
         )
-        Spacer(modifier = Modifier.width(6.dp))
+        Spacer(modifier = Modifier.width(5.dp))
         Column {
             Text(
                 text = "A.T.L.A.S.",
                 color = Gold,
-                fontSize = 18.sp,
+                fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp
+                letterSpacing = 0.8.sp
             )
             Text(
                 text = "ADVANCED TACTICAL LOGIC & ASSISTANCE SYSTEM",
-                color = Color.White.copy(alpha = 0.55f),
-                fontSize = 7.sp,
-                letterSpacing = 0.5.sp
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 6.5.sp,
+                letterSpacing = 0.4.sp
             )
         }
-
+        
         Spacer(modifier = Modifier.weight(1f))
-
+        
+        // Connected badge
         Row(
             modifier = Modifier
                 .background(Color(0xFF0A1A0A), RoundedCornerShape(20.dp))
-                .border(1.dp, Green.copy(alpha = 0.45f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 9.dp, vertical = 4.dp),
+                .border(1.dp, Green.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 8.dp, vertical = 3.5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -136,24 +151,23 @@ fun HeaderSection() {
             Text(
                 text = "CONNECTED • Hermes Online",
                 color = Green,
-                fontSize = 9.5.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.SemiBold
             )
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-        Icon(Icons.Default.Settings, null, tint = Gold, modifier = Modifier.size(19.dp))
+        
+        Spacer(modifier = Modifier.width(6.dp))
+        Icon(Icons.Default.Settings, null, tint = Gold, modifier = Modifier.size(18.dp))
     }
 }
 
-// ===================== INFO CARDS =====================
 @Composable
-fun InfoCardsRow() {
+fun InfoCards() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(7.dp)
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         InfoCard(Icons.Default.Memory, "MODEL", "Claude 3.5 Sonnet", "(OpenRouter)")
         InfoCard(Icons.Outlined.Cloud, "PROVIDER", "OpenRouter Online", null)
@@ -171,32 +185,31 @@ fun RowScope.InfoCard(
     Column(
         modifier = Modifier
             .weight(1f)
-            .background(CardBg, RoundedCornerShape(11.dp))
-            .border(1.dp, GoldDim, RoundedCornerShape(11.dp))
-            .padding(vertical = 9.dp, horizontal = 4.dp),
+            .background(CardBg, RoundedCornerShape(10.dp))
+            .border(1.dp, GoldDim, RoundedCornerShape(10.dp))
+            .padding(vertical = 8.dp, horizontal = 3.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = Gold, modifier = Modifier.size(15.dp))
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(title, color = Color.White.copy(alpha = 0.55f), fontSize = 8.5.sp)
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(title, color = Color.White.copy(alpha = 0.5f), fontSize = 8.sp)
         Text(
             value,
             color = Color.White,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         if (sub != null) {
-            Text(sub, color = Gold, fontSize = 8.5.sp)
+            Text(sub, color = Gold, fontSize = 8.sp)
         }
     }
 }
 
-// ===================== LEFT NAV =====================
 @Composable
-fun LeftNavigation() {
+fun LeftNav() {
     val items = listOf(
         Triple(Icons.Default.ChatBubble, "Chat", true),
         Triple(Icons.Default.Terminal, "Terminal", false),
@@ -208,7 +221,7 @@ fun LeftNavigation() {
 
     Column(
         modifier = Modifier
-            .width(68.dp)
+            .width(64.dp)
             .fillMaxHeight(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -216,50 +229,49 @@ fun LeftNavigation() {
         items.forEach { (icon, label, active) ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(vertical = 7.dp)
+                modifier = Modifier.padding(vertical = 6.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(38.dp)
                         .background(
                             if (active) Gold.copy(alpha = 0.15f) else Color.Transparent,
                             CircleShape
                         )
                         .then(
-                            if (active) Modifier.border(1.4.dp, Gold, CircleShape)
+                            if (active) Modifier.border(1.5.dp, Gold, CircleShape)
                             else Modifier
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         icon, label,
-                        tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
-                        modifier = Modifier.size(18.dp)
+                        tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                        modifier = Modifier.size(17.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     label,
-                    color = if (active) Gold else Color.White.copy(alpha = 0.38f),
-                    fontSize = 8.5.sp
+                    color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                    fontSize = 8.sp
                 )
             }
         }
     }
 }
 
-// ===================== CENTER ORB =====================
 @Composable
-fun CenterOrbSection(modifier: Modifier = Modifier) {
+fun CenterOrb(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "orb")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(18000, easing = LinearEasing),
+            animation = tween(16000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "rotation"
+        label = "rot"
     )
 
     Column(
@@ -268,14 +280,20 @@ fun CenterOrbSection(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier = Modifier.size(195.dp),
+            modifier = Modifier.size(180.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Soft glow
+            // Outer soft glow
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
-                    color = Gold.copy(alpha = 0.22f),
-                    radius = size.minDimension / 2.1f
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Gold.copy(alpha = 0.35f),
+                            Gold.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    ),
+                    radius = size.minDimension / 1.8f
                 )
             }
 
@@ -285,40 +303,52 @@ fun CenterOrbSection(modifier: Modifier = Modifier) {
                     .fillMaxSize()
                     .graphicsLayer { rotationZ = rotation }
             ) {
-                val center = Offset(size.width / 2, size.height / 2)
-                for (i in 1..9) {
-                    val radius = (size.minDimension / 2) * (i / 9.5f)
+                val c = Offset(size.width / 2, size.height / 2)
+                val maxR = size.minDimension / 2
+
+                // Multiple rings with decreasing opacity
+                for (i in 1..10) {
+                    val r = maxR * (i / 10.5f)
+                    val alpha = (1.1f - i * 0.09f).coerceIn(0.15f, 0.95f)
                     drawCircle(
-                        color = Gold.copy(alpha = (1.05f - i * 0.095f).coerceIn(0.18f, 1f)),
-                        radius = radius,
-                        center = center,
-                        style = Stroke(width = if (i == 1) 2.4f else 1.35f)
+                        color = Gold.copy(alpha = alpha),
+                        radius = r,
+                        center = c,
+                        style = Stroke(width = if (i <= 2) 2.2f else 1.2f)
                     )
                 }
-                drawCircle(color = Gold, radius = 12f, center = center)
+
+                // Bright core
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(GoldBright, Gold, Gold.copy(alpha = 0.6f))
+                    ),
+                    radius = 14f,
+                    center = c
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+        
         Text(
             "READY WHEN YOU ARE",
             color = Gold,
-            fontSize = 12.5.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 1.sp
+            letterSpacing = 0.8.sp
         )
-        Spacer(modifier = Modifier.height(3.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
             "Speak · Type · Command · Create",
-            color = Color.White.copy(alpha = 0.55f),
-            fontSize = 10.5.sp
+            color = Color.White.copy(alpha = 0.5f),
+            fontSize = 10.sp
         )
     }
 }
 
-// ===================== STATUS LIST =====================
 @Composable
-fun StatusList() {
+fun RightStatus() {
     val statuses = listOf(
         Triple(Icons.Default.RadioButtonChecked, "IDLE", true),
         Triple(Icons.Default.Mic, "LISTENING", false),
@@ -332,25 +362,25 @@ fun StatusList() {
 
     Column(
         modifier = Modifier
-            .width(92.dp)
+            .width(88.dp)
             .fillMaxHeight(),
         verticalArrangement = Arrangement.Center
     ) {
         statuses.forEach { (icon, label, active) ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.5.dp)
+                modifier = Modifier.padding(vertical = 4.dp)
             ) {
                 Icon(
                     icon, null,
-                    tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
-                    modifier = Modifier.size(14.dp)
+                    tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.size(13.dp)
                 )
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     label,
-                    color = if (active) Gold else Color.White.copy(alpha = 0.38f),
-                    fontSize = 9.5.sp,
+                    color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                    fontSize = 9.sp,
                     fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal
                 )
             }
@@ -358,106 +388,106 @@ fun StatusList() {
     }
 }
 
-// ===================== INPUT =====================
 @Composable
-fun InputSection() {
+fun InputBar() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp)
+            .padding(horizontal = 12.dp)
     ) {
+        // Search bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CardBg, RoundedCornerShape(26.dp))
-                .border(1.dp, GoldDim, RoundedCornerShape(26.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .background(CardBg, RoundedCornerShape(24.dp))
+                .border(1.dp, GoldDim, RoundedCornerShape(24.dp))
+                .padding(horizontal = 12.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Mic, null, tint = Gold, modifier = Modifier.size(20.dp))
+            Icon(Icons.Default.Mic, null, tint = Gold, modifier = Modifier.size(19.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Text(
                 "Ask me anything...",
-                color = Color.White.copy(alpha = 0.38f),
-                fontSize = 14.sp,
+                color = Color.White.copy(alpha = 0.4f),
+                fontSize = 13.5.sp,
                 modifier = Modifier.weight(1f)
             )
             Box(
                 modifier = Modifier
-                    .size(34.dp)
+                    .size(32.dp)
                     .background(Gold, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ArrowForward, null, tint = Color.Black, modifier = Modifier.size(17.dp))
+                Icon(Icons.Default.ArrowForward, null, tint = Color.Black, modifier = Modifier.size(16.dp))
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
+        // Quick chips
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            ActionChip(Icons.Default.ViewInAr, "Build something")
-            ActionChip(Icons.Default.Search, "Search the web")
-            ActionChip(Icons.Default.Terminal, "Run a command")
-            ActionChip(Icons.Default.MoreHoriz, "More")
+            Chip(Icons.Default.ViewInAr, "Build something")
+            Chip(Icons.Default.Search, "Search the web")
+            Chip(Icons.Default.Terminal, "Run a command")
+            Chip(Icons.Default.MoreHoriz, "More")
         }
     }
 }
 
 @Composable
-fun RowScope.ActionChip(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
+fun RowScope.Chip(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
     Row(
         modifier = Modifier
             .weight(1f)
-            .background(CardBg, RoundedCornerShape(18.dp))
-            .border(1.dp, Gold.copy(alpha = 0.3f), RoundedCornerShape(18.dp))
-            .padding(vertical = 6.dp),
+            .background(CardBg, RoundedCornerShape(16.dp))
+            .border(1.dp, Gold.copy(alpha = 0.28f), RoundedCornerShape(16.dp))
+            .padding(vertical = 5.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = Gold, modifier = Modifier.size(12.dp))
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(11.dp))
         Spacer(modifier = Modifier.width(3.dp))
         Text(
             label,
             color = Color.White.copy(alpha = 0.7f),
-            fontSize = 9.5.sp,
+            fontSize = 9.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-// ===================== RECENT ACTIVITY =====================
 @Composable
-fun RecentActivitySection() {
+fun RecentActivity() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp)
-            .background(CardBg, RoundedCornerShape(14.dp))
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(14.dp))
-            .padding(12.dp)
+            .padding(horizontal = 12.dp)
+            .background(CardBg, RoundedCornerShape(12.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(12.dp))
+            .padding(10.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("RECENT ACTIVITY", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-            Text("View All", color = Gold, fontSize = 10.sp)
+            Text("RECENT ACTIVITY", color = Color.White, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
+            Text("View All", color = Gold, fontSize = 9.5.sp)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        ActivityItem(Icons.Default.Terminal, "Terminal", "npm run dev", "2m ago", true)
-        ActivityItem(Icons.Outlined.InsertDriveFile, "File Operation", "Created: src/components/QuantumCore.tsx", "5m ago", true)
-        ActivityItem(Icons.Default.Psychology, "Thinking", "Planning next steps...", "7m ago", false)
+        ActivityRow(Icons.Default.Terminal, "Terminal", "npm run dev", "2m ago", true)
+        ActivityRow(Icons.Outlined.InsertDriveFile, "File Operation", "Created: src/components/QuantumCore.tsx", "5m ago", true)
+        ActivityRow(Icons.Default.Psychology, "Thinking", "Planning next steps...", "7m ago", false)
     }
 }
 
 @Composable
-fun ActivityItem(
+fun ActivityRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     desc: String,
@@ -467,56 +497,55 @@ fun ActivityItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, null, tint = Gold, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(9.dp))
+        Icon(icon, null, tint = Gold, modifier = Modifier.size(15.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, color = Color.White, fontSize = 11.5.sp, fontWeight = FontWeight.Medium)
-            Text(desc, color = Color.White.copy(alpha = 0.55f), fontSize = 9.5.sp)
+            Text(title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+            Text(desc, color = Color.White.copy(alpha = 0.5f), fontSize = 9.sp)
         }
-        Text(time, color = Color.White.copy(alpha = 0.38f), fontSize = 9.5.sp)
-        Spacer(modifier = Modifier.width(5.dp))
+        Text(time, color = Color.White.copy(alpha = 0.35f), fontSize = 9.sp)
+        Spacer(modifier = Modifier.width(4.dp))
         Icon(
             if (done) Icons.Default.CheckCircle else Icons.Default.Sync,
             null,
             tint = if (done) Green else Color(0xFF00B0FF),
-            modifier = Modifier.size(15.dp)
+            modifier = Modifier.size(14.dp)
         )
     }
 }
 
-// ===================== BOTTOM NAV =====================
 @Composable
-fun BottomNavigationBar() {
+fun BottomNav() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(CardBg)
-            .padding(vertical = 8.dp),
+            .padding(vertical = 7.dp),
         horizontalArrangement = Arrangement.SpaceAround
     ) {
-        BottomNavItem(Icons.Default.Home, "Home", true)
-        BottomNavItem(Icons.Outlined.ChatBubble, "Chat", false)
-        BottomNavItem(Icons.Outlined.History, "History", false)
-        BottomNavItem(Icons.Outlined.Person, "Profile", false)
+        BottomItem(Icons.Default.Home, "Home", true)
+        BottomItem(Icons.Outlined.ChatBubble, "Chat", false)
+        BottomItem(Icons.Outlined.History, "History", false)
+        BottomItem(Icons.Outlined.Person, "Profile", false)
     }
 }
 
 @Composable
-fun BottomNavItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, active: Boolean) {
+fun BottomItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, active: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             icon, label,
-            tint = if (active) Gold else Color.White.copy(alpha = 0.38f),
-            modifier = Modifier.size(21.dp)
+            tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
+            modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             label,
-            color = if (active) Gold else Color.White.copy(alpha = 0.38f),
-            fontSize = 9.5.sp
+            color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+            fontSize = 9.sp
         )
     }
 }

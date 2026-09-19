@@ -19,15 +19,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +63,9 @@ val GoldDim = Color(0xFFFFB800).copy(alpha = 0.4f)
 val Bg = Color(0xFF05070A)
 val CardBg = Color(0xFF0A0E14)
 val Green = Color(0xFF00E676)
+val MutedWhite = Color.White.copy(alpha = 0.5f)
+val FaintWhite = Color.White.copy(alpha = 0.35f)
+val RingDim = Color.White.copy(alpha = 0.12f)
 
 @Composable
 fun AtlasDashboard() {
@@ -64,17 +76,14 @@ fun AtlasDashboard() {
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        // Header
         Header()
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
-        // Info cards
+
         InfoCards()
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
-        // Main area
+
         Row(
             modifier = Modifier
                 .weight(1f)
@@ -84,18 +93,15 @@ fun AtlasDashboard() {
             CenterOrb(modifier = Modifier.weight(1f))
             RightStatus()
         }
-        
-        // Input
+
         InputBar()
-        
+
         Spacer(modifier = Modifier.height(6.dp))
-        
-        // Recent activity
+
         RecentActivity()
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
-        // Bottom nav
+
         BottomNav()
     }
 }
@@ -108,14 +114,10 @@ fun Header() {
             .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Logo
-        Text(
-            text = "A",
-            color = Gold,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Black
-        )
-        Spacer(modifier = Modifier.width(5.dp))
+        AtlasLogo(logoSize = 34.dp)
+
+        Spacer(modifier = Modifier.width(8.dp))
+
         Column {
             Text(
                 text = "A.T.L.A.S.",
@@ -126,38 +128,86 @@ fun Header() {
             )
             Text(
                 text = "ADVANCED TACTICAL LOGIC & ASSISTANCE SYSTEM",
-                color = Color.White.copy(alpha = 0.5f),
+                color = MutedWhite,
                 fontSize = 6.5.sp,
                 letterSpacing = 0.4.sp
             )
         }
-        
+
         Spacer(modifier = Modifier.weight(1f))
-        
-        // Connected badge
-        Row(
+
+        ConnectedBadge()
+
+        Spacer(modifier = Modifier.width(6.dp))
+
+        Box(
             modifier = Modifier
-                .background(Color(0xFF0A1A0A), RoundedCornerShape(20.dp))
-                .border(1.dp, Green.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 8.dp, vertical = 3.5.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(30.dp)
+                .border(1.dp, GoldDim, CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(Green, CircleShape)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
+            Icon(Icons.Default.Settings, null, tint = Gold, modifier = Modifier.size(15.dp))
+        }
+    }
+}
+
+/** Stylized triangular "A" logomark, drawn in-canvas so no drawable asset is required. */
+@Composable
+fun AtlasLogo(logoSize: Dp) {
+    Canvas(modifier = Modifier.size(logoSize)) {
+        val w = logoSize.toPx()
+        val h = logoSize.toPx()
+        val gradient = Brush.verticalGradient(listOf(GoldBright, Gold))
+
+        val mark = Path().apply {
+            moveTo(w * 0.5f, 0f)
+            lineTo(w * 0.98f, h)
+            lineTo(w * 0.74f, h)
+            lineTo(w * 0.5f, h * 0.45f)
+            lineTo(w * 0.26f, h)
+            lineTo(w * 0.02f, h)
+            close()
+        }
+        drawPath(mark, brush = gradient)
+
+        // Negative-space crossbar so the shape reads as "A"
+        drawRect(
+            color = Bg,
+            topLeft = Offset(w * 0.40f, h * 0.60f),
+            size = Size(w * 0.20f, h * 0.10f)
+        )
+    }
+}
+
+@Composable
+fun ConnectedBadge() {
+    Row(
+        modifier = Modifier
+            .background(Color(0xFF0A1A0A), RoundedCornerShape(50))
+            .border(1.dp, Green.copy(alpha = 0.4f), RoundedCornerShape(50))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .background(Green, CircleShape)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Column {
             Text(
-                text = "CONNECTED • Hermes Online",
+                text = "CONNECTED",
                 color = Green,
-                fontSize = 9.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.4.sp
+            )
+            Text(
+                text = "Hermes Online",
+                color = Green.copy(alpha = 0.75f),
+                fontSize = 8.sp
             )
         }
-        
-        Spacer(modifier = Modifier.width(6.dp))
-        Icon(Icons.Default.Settings, null, tint = Gold, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -169,18 +219,19 @@ fun InfoCards() {
             .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        InfoCard(Icons.Default.Memory, "MODEL", "Claude 3.5 Sonnet", "(OpenRouter)")
-        InfoCard(Icons.Outlined.Cloud, "PROVIDER", "OpenRouter Online", null)
-        InfoCard(Icons.Outlined.Timer, "SESSION", "Active 2h 14m", null)
+        InfoCard(Icons.Default.Memory, "MODEL", "Claude 3.5 Sonnet", "(OpenRouter)", Gold)
+        InfoCard(Icons.Outlined.Public, "PROVIDER", "OpenRouter", "Online", MutedWhite)
+        InfoCard(Icons.Outlined.Storage, "SESSION", "Active", "2h 14m", MutedWhite)
     }
 }
 
 @Composable
 fun RowScope.InfoCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     value: String,
-    sub: String?
+    sub: String?,
+    subColor: Color
 ) {
     Column(
         modifier = Modifier
@@ -190,9 +241,16 @@ fun RowScope.InfoCard(
             .padding(vertical = 8.dp, horizontal = 3.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(icon, null, tint = Gold, modifier = Modifier.size(14.dp))
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(title, color = Color.White.copy(alpha = 0.5f), fontSize = 8.sp)
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .border(1.dp, GoldDim, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, tint = Gold, modifier = Modifier.size(12.dp))
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(title, color = MutedWhite, fontSize = 8.sp, letterSpacing = 0.3.sp)
         Text(
             value,
             color = Color.White,
@@ -203,7 +261,7 @@ fun RowScope.InfoCard(
             overflow = TextOverflow.Ellipsis
         )
         if (sub != null) {
-            Text(sub, color = Gold, fontSize = 8.sp)
+            Text(sub, color = subColor, fontSize = 8.sp)
         }
     }
 }
@@ -238,22 +296,23 @@ fun LeftNav() {
                             if (active) Gold.copy(alpha = 0.15f) else Color.Transparent,
                             CircleShape
                         )
-                        .then(
-                            if (active) Modifier.border(1.5.dp, Gold, CircleShape)
-                            else Modifier
+                        .border(
+                            1.5.dp,
+                            if (active) Gold else RingDim,
+                            CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         icon, label,
-                        tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                        tint = if (active) Gold else FaintWhite,
                         modifier = Modifier.size(17.dp)
                     )
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     label,
-                    color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                    color = if (active) Gold else FaintWhite,
                     fontSize = 8.sp
                 )
             }
@@ -268,10 +327,19 @@ fun CenterOrb(modifier: Modifier = Modifier) {
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(16000, easing = LinearEasing),
+            animation = tween(20000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rot"
+    )
+    val counterRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(28000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rot2"
     )
 
     Column(
@@ -280,24 +348,55 @@ fun CenterOrb(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.Center
     ) {
         Box(
-            modifier = Modifier.size(180.dp),
+            modifier = Modifier.size(200.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Outer soft glow
+            // Outer soft ambient glow
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Gold.copy(alpha = 0.35f),
-                            Gold.copy(alpha = 0.08f),
+                            Gold.copy(alpha = 0.30f),
+                            Gold.copy(alpha = 0.10f),
                             Color.Transparent
                         )
                     ),
-                    radius = size.minDimension / 1.8f
+                    radius = size.minDimension / 1.7f
                 )
             }
 
-            // Rotating rings
+            // Fine radiating spokes for a "circuit burst" texture
+            Canvas(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { rotationZ = counterRotation }
+            ) {
+                val c = Offset(size.width / 2, size.height / 2)
+                val maxR = size.minDimension / 2
+                val spokes = 48
+                for (i in 0 until spokes) {
+                    val angle = (i * (360f / spokes)) * (PI / 180f)
+                    val lenFactor = 0.55f + ((i * 37) % 45) / 100f
+                    val r1 = maxR * 0.4f
+                    val r2 = maxR * lenFactor
+                    val alpha = 0.08f + ((i * 13) % 30) / 100f
+                    drawLine(
+                        color = Gold.copy(alpha = alpha),
+                        start = Offset(
+                            c.x + r1 * cos(angle).toFloat(),
+                            c.y + r1 * sin(angle).toFloat()
+                        ),
+                        end = Offset(
+                            c.x + r2 * cos(angle).toFloat(),
+                            c.y + r2 * sin(angle).toFloat()
+                        ),
+                        strokeWidth = 1f,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            // Rotating concentric rings + bright core
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -306,31 +405,29 @@ fun CenterOrb(modifier: Modifier = Modifier) {
                 val c = Offset(size.width / 2, size.height / 2)
                 val maxR = size.minDimension / 2
 
-                // Multiple rings with decreasing opacity
-                for (i in 1..10) {
-                    val r = maxR * (i / 10.5f)
-                    val alpha = (1.1f - i * 0.09f).coerceIn(0.15f, 0.95f)
+                for (i in 1..14) {
+                    val r = maxR * (i / 14.5f)
+                    val alpha = (1.05f - i * 0.06f).coerceIn(0.10f, 0.95f)
                     drawCircle(
                         color = Gold.copy(alpha = alpha),
                         radius = r,
                         center = c,
-                        style = Stroke(width = if (i <= 2) 2.2f else 1.2f)
+                        style = Stroke(width = if (i <= 2) 2.2f else 1f)
                     )
                 }
 
-                // Bright core
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(GoldBright, Gold, Gold.copy(alpha = 0.6f))
                     ),
-                    radius = 14f,
+                    radius = 16f,
                     center = c
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        
+
         Text(
             "READY WHEN YOU ARE",
             color = Gold,
@@ -341,7 +438,7 @@ fun CenterOrb(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             "Speak · Type · Command · Create",
-            color = Color.White.copy(alpha = 0.5f),
+            color = MutedWhite,
             fontSize = 10.sp
         )
     }
@@ -362,7 +459,7 @@ fun RightStatus() {
 
     Column(
         modifier = Modifier
-            .width(88.dp)
+            .width(92.dp)
             .fillMaxHeight(),
         verticalArrangement = Arrangement.Center
     ) {
@@ -371,15 +468,22 @@ fun RightStatus() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(vertical = 4.dp)
             ) {
-                Icon(
-                    icon, null,
-                    tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
-                    modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .size(22.dp)
+                        .border(1.dp, if (active) Gold else RingDim, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon, null,
+                        tint = if (active) Gold else FaintWhite,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     label,
-                    color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+                    color = if (active) Gold else FaintWhite,
                     fontSize = 9.sp,
                     fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal
                 )
@@ -395,41 +499,55 @@ fun InputBar() {
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
     ) {
-        // Search bar
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(CardBg, RoundedCornerShape(24.dp))
-                .border(1.dp, GoldDim, RoundedCornerShape(24.dp))
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Mic, null, tint = Gold, modifier = Modifier.size(19.dp))
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                "Ask me anything...",
-                color = Color.White.copy(alpha = 0.4f),
-                fontSize = 13.5.sp,
-                modifier = Modifier.weight(1f)
-            )
+            // Standalone mic button, separate from the search pill
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .background(Gold, CircleShape),
+                    .size(40.dp)
+                    .border(1.dp, Gold, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.ArrowForward, null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Mic, null, tint = Gold, modifier = Modifier.size(18.dp))
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Search pill with trailing send button
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(CardBg, RoundedCornerShape(24.dp))
+                    .border(1.dp, GoldDim, RoundedCornerShape(24.dp))
+                    .padding(start = 14.dp, end = 5.dp, top = 5.dp, bottom = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Ask me anything...",
+                    color = Color.White.copy(alpha = 0.4f),
+                    fontSize = 13.5.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Gold, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.ArrowForward, null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Quick chips
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            Chip(Icons.Default.ViewInAr, "Build something")
+            Chip(Icons.Default.AutoAwesome, "Build something")
             Chip(Icons.Default.Search, "Search the web")
             Chip(Icons.Default.Terminal, "Run a command")
             Chip(Icons.Default.MoreHoriz, "More")
@@ -438,7 +556,7 @@ fun InputBar() {
 }
 
 @Composable
-fun RowScope.Chip(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String) {
+fun RowScope.Chip(icon: ImageVector, label: String) {
     Row(
         modifier = Modifier
             .weight(1f)
@@ -480,19 +598,20 @@ fun RecentActivity() {
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        ActivityRow(Icons.Default.Terminal, "Terminal", "npm run dev", "2m ago", true)
-        ActivityRow(Icons.Outlined.InsertDriveFile, "File Operation", "Created: src/components/QuantumCore.tsx", "5m ago", true)
+        ActivityRow(Icons.Default.Terminal, "Terminal", "npm run dev", "2m ago", true, monospace = true)
+        ActivityRow(Icons.Outlined.InsertDriveFile, "File Operation", "Created: src/components/QuantumCore.tsx", "5m ago", true, monospace = true)
         ActivityRow(Icons.Default.Psychology, "Thinking", "Planning next steps...", "7m ago", false)
     }
 }
 
 @Composable
 fun ActivityRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     desc: String,
     time: String,
-    done: Boolean
+    done: Boolean,
+    monospace: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -504,9 +623,14 @@ fun ActivityRow(
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(title, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-            Text(desc, color = Color.White.copy(alpha = 0.5f), fontSize = 9.sp)
+            Text(
+                desc,
+                color = MutedWhite,
+                fontSize = 9.sp,
+                fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default
+            )
         }
-        Text(time, color = Color.White.copy(alpha = 0.35f), fontSize = 9.sp)
+        Text(time, color = FaintWhite, fontSize = 9.sp)
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
             if (done) Icons.Default.CheckCircle else Icons.Default.Sync,
@@ -534,17 +658,17 @@ fun BottomNav() {
 }
 
 @Composable
-fun BottomItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, active: Boolean) {
+fun BottomItem(icon: ImageVector, label: String, active: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             icon, label,
-            tint = if (active) Gold else Color.White.copy(alpha = 0.35f),
+            tint = if (active) Gold else FaintWhite,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             label,
-            color = if (active) Gold else Color.White.copy(alpha = 0.35f),
+            color = if (active) Gold else FaintWhite,
             fontSize = 9.sp
         )
     }
